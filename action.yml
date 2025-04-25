@@ -25,6 +25,16 @@ runs:
       run: |
         sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
 
+    - name: 'Configure Access for Specified User'
+      shell: bash
+      run: |
+        sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+          -configure -allowAccessFor -specifiedUsers
+        sudo dscl . create /Groups/com.apple.remote.management
+        sudo dscl . create /Groups/com.apple.remote.management PrimaryGroupID 404
+        sudo dscl . create /Groups/com.apple.remote.management RealName "Remote Management Group"
+        sudo dseditgroup -o edit -a "${{ inputs.allowed_user }}" -t user com.apple.remote.management
+
     - name: 'Enable Remote Management'
       shell: bash
       run: |
@@ -33,13 +43,6 @@ runs:
           -clientopts -setvnclegacy -vnclegacy yes \
           -clientopts -setvncpw -vncpw "${{ inputs.vnc_password }}" \
           -restart -agent -privs -all
-
-    - name: 'Configure Access for Specified User'
-      shell: bash
-      run: |
-        sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
-          -configure -allowAccessFor -specifiedUsers
-        sudo dseditgroup -o edit -a "${{ inputs.allowed_user }}" -t user com.apple.remote.management
 
     - name: 'Allow Remote Management Through Firewall'
       shell: bash
