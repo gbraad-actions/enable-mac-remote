@@ -15,11 +15,13 @@ runs:
   steps:
     - name: 'Ensure Runner is macOS'
       if: ${{ runner.os != 'macOS' }}
+      shell: bash
       run: |
         echo "This action must be run on a macOS runner."
         exit 1
 
     - name: 'Enable Remote Management'
+      shell: bash
       run: |
         sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
           -activate -configure -access -on \
@@ -28,12 +30,18 @@ runs:
           -restart -agent -privs -all
 
     - name: 'Configure Access for Specified User'
+      shell: bash
       run: |
         sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
           -configure -allowAccessFor -specifiedUsers
         sudo dseditgroup -o edit -a "${{ inputs.allowed_user }}" -t user com.apple.remote.management
 
     - name: 'Allow Remote Management Through Firewall'
+      shell: bash
       run: |
         sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/MacOS/ARDAgent
         sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/MacOS/ARDAgent
+
+branding:
+  icon: 'desktop'
+  color: 'blue'
