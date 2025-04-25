@@ -1,0 +1,39 @@
+name: 'Enable macOS Remote Desktop'
+description: 'An action to enable macOS Remote Desktop on a self-hosted macOS runner'
+
+inputs:
+  vnc_password:
+    description: 'The password to set for VNC access (used in Remote Desktop)'
+    required: true
+  allowed_user:
+    description: 'The username to allow Remote Desktop access for. Defaults to "runner".'
+    required: false
+    default: 'runner'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Ensure Runner is macOS'
+      if: ${{ runner.os != 'macOS' }}
+      run: |
+        echo "This action must be run on a macOS runner."
+        exit 1
+
+    - name: 'Enable Remote Management'
+      run: |
+        sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+          -activate -configure -access -on \
+          -clientopts -setvnclegacy -vnclegacy yes \
+          -clientopts -setvncpw -vncpw "${{ inputs.vnc_password }}" \
+          -restart -agent -privs -all
+
+    - name: 'Configure Access for Specified User'
+      run: |
+        sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+          -configure -allowAccessFor -specifiedUsers
+        sudo dseditgroup -o edit -a "${{ inputs.allowed_user }}" -t user com.apple.remote.management
+
+    - name: 'Allow Remote Management Through Firewall'
+      run: |
+        sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/MacOS/ARDAgent
+        sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/MacOS/ARDAgent
