@@ -20,6 +20,11 @@ runs:
         echo "This action must be run on a macOS runner."
         exit 1
 
+    - name: 'Enable Screen Sharing'
+      shell: bash
+      run: |
+        sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
+
     - name: 'Enable Remote Management'
       shell: bash
       run: |
